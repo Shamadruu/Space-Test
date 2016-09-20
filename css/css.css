@@ -1,0 +1,18 @@
+body {
+  background: black;
+}
+svg {
+  border: 1px solid white;
+  position: absolute;
+  width: 800;
+  height: 800;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+#systemList {
+	color: white;
+}
+#systemlist .systemHeader *{
+	display: inline-block;
+}
