@@ -13,6 +13,9 @@ svg {
 #systemList {
 	color: white;
 }
-#systemlist .systemHeader *{
+#systemlist .systemHeader *, #systemList .planetList .planet *{
 	display: inline-block;
+}
+.planetList li{
+	list-style: none;
 }

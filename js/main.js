@@ -3,7 +3,7 @@
 ******************************/
 
 //System count & positions
-var systemCount = 25;
+var systemCount = 250;
 var width = 800;
 var height = 800;
 var meanSeparation = 800;
@@ -70,7 +70,7 @@ var systemTypes = {
 	},
 	pulsar: {
 		//Special: Scanning
-		name: 'Pulsar System',
+		name: 'Pulsar',
 		stars: 1,
 		starAges: [],
 		starTypes : {'neutron' : 1},
@@ -98,41 +98,49 @@ for(var systemType in systemTypes){
 }
 var planetTypes = {
 	asteroid: {
+		name : 'Asteroids',
 		sizeTypes : {'small' : 0.6, 'medium': 0.4},
 		maxMoons : 0,
 		minMoons : 0
 	},
 	metallic: {
+		name : 'Metallic',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 3,
 		minMoons : 0
 	},
 	molten: {
+		name : 'Molten',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 3,
 		minMoons : 0
 	},
 	rocky: {
+		name : 'Rocky',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 3,
 		minMoons : 0
 	},
 	terra: {
+		name : 'Terran',
 		sizeTypes : {'small' : 0.2, 'medium': 0.6, 'large' : 0.2},
 		maxMoons : 3,
 		minMoons : 0
 	},
 	oceanic : {
+		name : 'Oceanic',
 		sizeTypes : {'medium': 0.4, 'large' : 0.4, 'massive': 0.2},
 		maxMoons : 5,
 		minMoons : 0
 	},
 	icy: {
+		name : 'Icy',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 5,
 		minMoons : 0
 	},
 	gaseous: {
+		name : 'Gaseous',
 		sizeTypes : {'medium': 0.2, 'large' : 0.6, 'massive': 0.2},
 		maxMoons : 10,
 		minMoons : 0
@@ -218,6 +226,10 @@ ProbIntervals.prototype.pick = function(){
 		}
 	}
 }
+
+String.prototype.toProperCase = function () {
+    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+};
 /******************************
 **********FUNCTIONS************
 ******************************/
@@ -249,7 +261,14 @@ function createSystemList(systems){
 	var html = '';
 	for(var system in systems){
 		var s = systems[system];
-		html += '<div class="systemWrapper"><div class="systemHeader"><h2>' + s.name + '</h2><h3>&nbsp; - &nbsp;' + s.typeName + ' System</h3></div></div>'
+		html += '<div class="systemWrapper"><div class="systemHeader"><h2>' + s.name + '</h2><h3>&nbsp; - &nbsp;' + s.typeName + ' System</h3><h4>&nbsp; - &nbsp;'+ s.typeObject.stars +' Stars</h4><h5>&nbsp; - &nbsp;' + s.planetCount + ' Planets</h5></div><ul class="planetList">'
+		
+		for(var i=0;i<s.planetCount;i++){
+			var p = s.planets[i];
+			html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + ' Planet</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5></li>';
+		}
+		
+		html += '</ul><hr></div>'
 	}
 	list.innerHTML = html;
 }
