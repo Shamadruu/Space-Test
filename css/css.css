@@ -13,9 +13,10 @@ svg {
 #systemList {
 	color: white;
 }
-#systemlist .systemHeader *, #systemList .planetList .planet *{
+#systemlist .systemHeader *, #systemList .planetList .planet *, #systemList .starList .star *{
 	display: inline-block;
 }
-.planetList li{
+
+.planetList li, .starList li{
 	list-style: none;
 }

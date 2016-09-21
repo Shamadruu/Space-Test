@@ -19,8 +19,7 @@ var systemTypes = {
 	singular: {
 		name: 'Solar',
 		stars: 1,
-		starAges: ['young', 'normal','old'],
-		starTypes : {'blue' : 0.2, 'yellow' : 0.5, 'red' : 0.3},
+		starTypes : {'blue' : 0.2, 'yellow' : 0.5, 'red' : 0.275, 'neutron': 0.025},
 		minPlanets : 1,
 		maxPlanets : 10,
 		planetTypes: {'asteroid' : 0.05, 'metallic' : 0.05, 'molten' : 0.1,'rocky': 0.2, 'terra': 0.1, 'oceanic' : 0.05,'icy' : 0.1, 'gaseous' : 0.35},
@@ -29,8 +28,7 @@ var systemTypes = {
 	binary: {
 		name: 'Binary',
 		stars: 2,
-		starAges: ['young', 'normal','old'],
-		starTypes : {'blue' : 0.2, 'yellow' : 0.5, 'red' : 0.3},
+		starTypes : {'blue' : 0.2, 'yellow' : 0.5, 'red' : 0.275, 'neutron': 0.025},
 		minPlanets : 1,
 		maxPlanets : 7,
 		planetTypes: {'asteroid' : 0.05, 'metallic' : 0.05, 'molten' : 0.1,'rocky': 0.2, 'terra': 0.1, 'oceanic' : 0.05,'icy' : 0.1, 'gaseous' : 0.35},
@@ -39,19 +37,17 @@ var systemTypes = {
 	trinary: {
 		name: 'Trinary',
 		stars: 3,
-		starAges: ['young', 'normal','old'],
-		starTypes : {'blue' : 0.2, 'yellow' : 0.5, 'red' : 0.3},
+		starTypes : {'blue' : 0.2, 'yellow' : 0.5, 'red' : 0.275, 'neutron': 0.025},
 		minPlanets : 1,
 		maxPlanets : 7,
 		planetTypes: {'asteroid' : 0.05, 'metallic' : 0.05, 'molten' : 0.1,'rocky': 0.1, 'terra': 0.05, 'oceanic' : 0.05,'icy' : 0.15, 'gaseous' : 0.45},
 		frequency: 0.025
 	},
-	accreting: {
+	nascent: {
 		//Special: Minerals
 		name: 'Accreting',
 		stars: 1,
-		starAges: ['new'],
-		starTypes : {'blue' : 0.5, 'yellow' : 0.5, 'red' : 0.1},
+		starTypes : {'blue' : 0.4, 'yellow' : 0.5, 'red' : 0.1},
 		minPlanets : 1,
 		maxPlanets : 6,
 		planetTypes: {'asteroid' : 0.2, 'rocky': 0.4, 'gaseous' : 0.4},
@@ -61,7 +57,6 @@ var systemTypes = {
 		//Special: Volatiles
 		name: 'Supernova Remnant',
 		stars: 1,
-		starAges: [],
 		starTypes : {'neutron' : 0.3, 'white' : 0.7},
 		minPlanets : 1,
 		maxPlanets : 6,
@@ -72,7 +67,6 @@ var systemTypes = {
 		//Special: Scanning
 		name: 'Pulsar',
 		stars: 1,
-		starAges: [],
 		starTypes : {'neutron' : 1},
 		minPlanets : 1,
 		maxPlanets : 6,
@@ -82,9 +76,8 @@ var systemTypes = {
 	blackhole: {
 		//Special: Research & Energy
 		name: 'Black Hole',
-		stars: 0,
-		starAges: [],
-		starTypes : {},
+		stars: 1,
+		starTypes : {'blackhole' : 1},
 		minPlanets : 1,
 		maxPlanets : 3,
 		planetTypes: {'metallic' : 0.2, 'icy' : 0.2, 'gaseous' : 0.6},
@@ -96,9 +89,41 @@ var systemFrequency = {};
 for(var systemType in systemTypes){
 	systemFrequency[systemType] = systemTypes[systemType].frequency;
 }
+
+var starTypes = {
+	blue : {
+		name : 'Blue',
+		sizeTypes : {'dwarf': 0.025, 'medium' : 0.75 , 'giant': 0.2, 'hypergiant' : 0.025}
+	},
+	yellow : {
+		name : 'Yellow',
+		sizeTypes : {'medium' : 1}
+	},
+	red : {
+		name : 'Red',
+		sizeTypes : {'dwarf': 0.2, 'medium' : 0.3, 'giant': 0.4, 'hypergiant' : 0.1}
+	},
+	nascent : {
+		name : 'Nascent',
+		sizeTypes : {'dwarf': 0.025, 'medium' : 0.75 , 'giant': 0.2, 'hypergiant' : 0.025}
+	},
+	neutron : {
+		name : 'Neutron',
+		sizeTypes : {'massive' : 1}
+	},
+	white: {
+		name : 'White',
+		sizeTypes : {'dwarf': 1}
+	},
+	blackhole: {
+		name : 'Black Hole',
+		sizeTypes : {'stellar mass': 0.4, 'intermediate mass' : 0.3 , 'supermassive': 0.2, 'gargantuan' : 0.1}
+	}
+	
+}
 var planetTypes = {
 	asteroid: {
-		name : 'Asteroids',
+		name : 'Asteroid Belt',
 		sizeTypes : {'small' : 0.6, 'medium': 0.4},
 		maxMoons : 0,
 		minMoons : 0
@@ -160,12 +185,17 @@ var game = {
 //General
 var svg = document.querySelector("#systems");
 
+//svg.width.baseVal.value = width;
+//svg.height.baseVal.value = height;
+
 /******************************
 ***********OBJECTS*************
 ******************************/
 
+//SYSTEM
 var System = function(x, y, f) {
 	var systemIntervals = new ProbIntervals(systemFrequency);
+	var starIntervals;
 	var planetIntervals;
     this.x = x;
     this.y = y;
@@ -175,8 +205,16 @@ var System = function(x, y, f) {
 	this.typeObject = Object.assign({},systemTypes[this.type]);
 	this.typeName = this.typeObject.name;
 	
+	this.starCount = this.typeObject.stars;
+	this.stars = [];
+	
+	starIntervals = new ProbIntervals(this.typeObject.starTypes);
+	for(var i=0;i<this.starCount;i++){
+		this.stars.push(new Star(this.name, starIntervals, i));
+	}
+	
 	this.planetCount = Math.floor(map(Math.random(), 0, 1, this.typeObject.minPlanets, this.typeObject.maxPlanets+1));
-	this.planets = []
+	this.planets = [];
 	
 	planetIntervals = new ProbIntervals(this.typeObject.planetTypes);
 	for(var i=0;i<this.planetCount;i++){
@@ -184,6 +222,18 @@ var System = function(x, y, f) {
 	}
 }
 
+//STAR
+var Star = function(systemName, intervals, index){
+	var sizeIntervals;
+	this.name = systemName + ' ' + ('ABC'[index]);
+	this.type = intervals.pick();
+	this.typeObject = Object.assign({}, starTypes[this.type]);
+	
+	this.sizeIntervals = new ProbIntervals(this.typeObject.sizeTypes);
+	this.size = this.sizeIntervals.pick();
+}
+
+//PLANET
 var Planet = function(systemName, intervals, index){
 	var sizeIntervals;
 	this.name = systemName + " " + (index+1);
@@ -196,6 +246,7 @@ var Planet = function(systemName, intervals, index){
 	this.moonCount = Math.floor(map(Math.random(), 0, 1, this.typeObject.minMoons, this.typeObject.maxMoons+1));
 }
 
+//PROB INTERVAL
 var ProbIntervals = function(object){
 	//Correction factor for floating point errors
 	
@@ -251,9 +302,11 @@ function generateSystems(count, w, h, minX, maxX, minY, maxY) {
 
 function drawSystems(systems, r) {
     var g = document.querySelector("g");
+	var html = '';
     for (var i = 0; i < systems.length; i++) {
-        g.innerHTML += '<circle cx="' + systems[i].x + '" cy="' + systems[i].y + '" r="' + r + '" stroke="white" stroke-width = "0" fill="white"/>';
+        html += '<circle cx="' + systems[i].x + '" cy="' + systems[i].y + '" r="' + r + '" stroke="white" stroke-width = "0" fill="white"/>';
     }
+	g.innerHTML += html;
 }
 
 function createSystemList(systems){
@@ -261,11 +314,40 @@ function createSystemList(systems){
 	var html = '';
 	for(var system in systems){
 		var s = systems[system];
-		html += '<div class="systemWrapper"><div class="systemHeader"><h2>' + s.name + '</h2><h3>&nbsp; - &nbsp;' + s.typeName + ' System</h3><h4>&nbsp; - &nbsp;'+ s.typeObject.stars +' Stars</h4><h5>&nbsp; - &nbsp;' + s.planetCount + ' Planets</h5></div><ul class="planetList">'
+		html += '<div class="systemWrapper"><div class="systemHeader"><h2>' + s.name + '</h2><h3>&nbsp; - &nbsp;' + s.typeName + ' System</h3><h4>&nbsp; - &nbsp;'+ s.starCount +' Stars</h4><h5>&nbsp; - &nbsp;' + s.planetCount + ' Planets</h5></div></div><ul class="starList"><b><u>Stars</b></u>';
+
+		for(var i=0;i<s.starCount;i++){
+			var st = s.stars[i];
+			html += '<li class="star"><h3>' + st.name + '</h3><h4>&nbsp; - &nbsp;';
+			
+			if(st.type === 'neutron'){
+				html += st.size.toProperCase() +  ' ' + st.typeObject.name +' Star' ;
+			}
+			else if (st.type === 'white'){
+				html += st.typeObject.name + ' '+ st.size.toProperCase();
+			}
+			else if (st.size === 'giant' || st.size === 'hypergiant'){
+				html += st.typeObject.name + ' '+ st.size.toProperCase();
+			}
+			else{
+				html += st.size.toProperCase() + ' ' + st.typeObject.name +  ' Star' ;
+			}
+			
+			html +='</h4></li>';
+		}
+		
+		
+		html += '</ul><ul class="planetList"><b><u>Planets</b></u>'
 		
 		for(var i=0;i<s.planetCount;i++){
 			var p = s.planets[i];
-			html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + ' Planet</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5></li>';
+			
+			if(p.type === 'asteroid'){
+				html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + '</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5></li>';
+			}
+			else{
+				html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + ' Planet</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5></li>';
+			}
 		}
 		
 		html += '</ul><hr></div>'
@@ -305,8 +387,8 @@ function map(x, inmin, inmax, outmin, outmax) {
 }
 
 var time = new Date().getTime();
-var newSystems = generateSystems(systemCount, width, height, minimumDistanceX, maximumDistanceX, minimumDistanceY, maximumDistanceY);
+var systems = generateSystems(systemCount, width, height, minimumDistanceX, maximumDistanceX, minimumDistanceY, maximumDistanceY);
 //drawSystems(newSystems, systemRadius);
-createSystemList(newSystems);
+createSystemList(systems);
 var time2 = new Date().getTime();
 console.log(time2 - time);
