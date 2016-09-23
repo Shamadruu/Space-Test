@@ -3,15 +3,15 @@
 ******************************/
 
 //System count & positions
-var systemCount = 250;
-var width = 800;
-var height = 800;
+var systemCount = 2500;
+var width = 8000;
+var height = 8000;
 var meanSeparation = 800;
 var standardDev = 10;
 var minimumDistanceX = 10;
-var maximumDistanceX = 800;
+var maximumDistanceX = 8000;
 var minimumDistanceY = 10;
-var maximumDistanceY = 800;
+var maximumDistanceY = 8000;
 var systemRadius = 2.5;
 
 //System parameters
@@ -126,49 +126,89 @@ var planetTypes = {
 		name : 'Asteroid Belt',
 		sizeTypes : {'small' : 0.6, 'medium': 0.4},
 		maxMoons : 0,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [1,1.5],
+		volatiles: [0.75, 1],
+		energy: [0.5, 0.75],
+		research: [0.75, 1.25],
+		distance: [4, 350]
 	},
 	metallic: {
 		name : 'Metallic',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 3,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [1.25, 2.5],
+		volatiles: [0.5, 0.75],
+		energy: [0.5, 0.75],
+		research: [0.75, 1.5],
+		distance: [0.1, 0.25]
 	},
 	molten: {
 		name : 'Molten',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 3,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [1,1.5],
+		volatiles: [0.5, 0.75],
+		energy: [1, 1.5],
+		research: [0.5, 1],
+		distance: [0.1, 0.5]
 	},
 	rocky: {
 		name : 'Rocky',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 3,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [1,1.5],
+		volatiles: [0.5, 1],
+		energy: [0.5, 0.75],
+		research: [0.5, 0.75],
+		distance: [0.25, 2]
 	},
 	terra: {
 		name : 'Terran',
 		sizeTypes : {'small' : 0.2, 'medium': 0.6, 'large' : 0.2},
 		maxMoons : 3,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [0.75,1.5],
+		volatiles: [0.75, 1.5],
+		energy: [0.5, 0.75],
+		research: [0.75, 1.75],
+		distance: [0.75, 2]
 	},
 	oceanic : {
 		name : 'Oceanic',
 		sizeTypes : {'medium': 0.4, 'large' : 0.4, 'massive': 0.2},
 		maxMoons : 5,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [0.5,0.75],
+		volatiles: [0.75, 1.5],
+		energy: [0.75, 1.25],
+		research: [0.75, 1.25],
+		distance: [0.5, 2]
 	},
 	icy: {
 		name : 'Icy',
 		sizeTypes : {'tiny': 0.1, 'small' : 0.2, 'medium': 0.4, 'large' : 0.2, 'massive': 0.1},
 		maxMoons : 5,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [0.5,1],
+		volatiles: [0.75, 1.5],
+		energy: [0.5, 0.75],
+		research: [0.75, 1.25],
+		distance: [5, 350]
 	},
 	gaseous: {
 		name : 'Gaseous',
 		sizeTypes : {'medium': 0.2, 'large' : 0.6, 'massive': 0.2},
 		maxMoons : 10,
-		minMoons : 0
+		minMoons : 0,
+		minerals: [0,0.5],
+		volatiles: [1, 3],
+		energy: [0.75, 1.5],
+		research: [0.75, 1.5],
+		distance: [0.25, 350]
 	}
 }
 
@@ -200,6 +240,10 @@ var System = function(x, y, f) {
     this.x = x;
     this.y = y;
     this.faction = f;
+	
+	this.distance = Math.round(Math.sqrt(this.x**2 + this.y**2)*100)/100;
+	
+	//Generation related
     this.name = generate_name('solar_systems');
 	this.type = systemIntervals.pick();
 	this.typeObject = Object.assign({},systemTypes[this.type]);
@@ -220,6 +264,13 @@ var System = function(x, y, f) {
 	for(var i=0;i<this.planetCount;i++){
 		this.planets.push(new Planet(this.name, planetIntervals, i));
 	}
+	
+	this.moonCount = 0;
+	for(var i=0;i<this.planets.length;i++){
+		this.moonCount += this.planets[i].moonCount;
+	}
+	
+	this.planets.sort(function(a,b){ return a.distance - b.distance; });
 }
 
 //STAR
@@ -244,13 +295,22 @@ var Planet = function(systemName, intervals, index){
 	this.size = this.sizeIntervals.pick();
 	
 	this.moonCount = Math.floor(map(Math.random(), 0, 1, this.typeObject.minMoons, this.typeObject.maxMoons+1));
+	
+	this.resources = {
+		minerals: Math.floor(map(Math.random(), 0, 1, this.typeObject.minerals[0], this.typeObject.minerals[1])*10000)/10000,
+		volatiles: Math.floor(map(Math.random(), 0, 1, this.typeObject.volatiles[0], this.typeObject.volatiles[1])*10000)/10000,
+		energy: Math.floor(map(Math.random(), 0, 1, this.typeObject.energy[0], this.typeObject.energy[1])*10000)/10000,
+		research: Math.floor(map(Math.random(), 0, 1, this.typeObject.research[0], this.typeObject.research[1])*10000)/10000
+	}
+	
+	this.distance =  Math.floor(map(Math.random(), 0, 1, this.typeObject.distance[0], this.typeObject.distance[1])*10000)/10000
 }
 
 //PROB INTERVAL
 var ProbIntervals = function(object){
 	//Correction factor for floating point errors
 	
-	var cf = Math.pow(10, 5);
+	var cf = 10**5;
 	var obj = {};
 	Object.assign(obj, object);
 	var keys = Object.keys(obj);
@@ -290,11 +350,13 @@ function generateSystems(count, w, h, minX, maxX, minY, maxY) {
         x: w / 2,
         y: h / 2
     };
-
+	
+	systems.push(new System(0, 0, 1));
+	
     for (var i = 0; i < count; i++) {
         var x = center.x + ~~map(Math.random(), 0, 1, minX, maxX) - maxX / 2;
         var y = center.y + ~~map(Math.random(), 0, 1, minY, maxY) - maxY / 2;
-        var system = new System(x, y, 0);
+        var system = new System(x-center.x, y-center.y, 0);
         systems.push(system);
     }
     return systems;
@@ -314,7 +376,7 @@ function createSystemList(systems){
 	var html = '';
 	for(var system in systems){
 		var s = systems[system];
-		html += '<div class="systemWrapper"><div class="systemHeader"><h2>' + s.name + '</h2><h3>&nbsp; - &nbsp;' + s.typeName + ' System</h3><h4>&nbsp; - &nbsp;'+ s.starCount +' Stars</h4><h5>&nbsp; - &nbsp;' + s.planetCount + ' Planets</h5></div></div><ul class="starList"><b><u>Stars</b></u>';
+		html += '<div class="systemWrapper"><div class="systemHeader"><h2>' + s.name + '</h2><h3>&nbsp; - &nbsp;' + s.typeName + ' System</h3><h3>&nbsp; - &nbsp;' + (s.distance/10).toFixed(2) + ' Light Years Away</h3><h4>&nbsp; - &nbsp;'+ s.starCount +' Star(s)</h4><h5>&nbsp; - &nbsp;' + s.planetCount + ' Planet(s)</h5><h6>&nbsp; - &nbsp;' + s.moonCount + ' Moon(s)</h6></div></div><ul class="starList"><b><u>Stars</b></u>';
 
 		for(var i=0;i<s.starCount;i++){
 			var st = s.stars[i];
@@ -343,11 +405,14 @@ function createSystemList(systems){
 			var p = s.planets[i];
 			
 			if(p.type === 'asteroid'){
-				html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + '</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5></li>';
+				html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + '</h4><h4>&nbsp; - &nbsp;' + p.distance.toFixed(2) + ' AU</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5>';
 			}
 			else{
-				html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + ' Planet</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5></li>';
+				html += '<li class="planet"><h3>' + p.name + '</h3><h4>&nbsp; - &nbsp;' + p.size.toProperCase() + ' ' + p.typeObject.name + ' Planet</h4><h4>&nbsp; - &nbsp;' + p.distance.toFixed(2) + ' AU</h4><h5>&nbsp; - &nbsp;' + p.moonCount + ' Moons</h5>';
 			}
+			
+			
+			html += '<br><ul><li>' + (p.resources.minerals*100).toFixed(2) +'% Minerals &nbsp;|&nbsp;'  + (p.resources.volatiles*100).toFixed(2) + '% Volatiles &nbsp;|&nbsp;' + (p.resources.energy * 100).toFixed(2) + '% Energy &nbsp;|&nbsp;' + (p.resources.research*100).toFixed(2) + '% Research</li></ul></li>';
 		}
 		
 		html += '</ul><hr></div>'
@@ -388,6 +453,7 @@ function map(x, inmin, inmax, outmin, outmax) {
 
 var time = new Date().getTime();
 var systems = generateSystems(systemCount, width, height, minimumDistanceX, maximumDistanceX, minimumDistanceY, maximumDistanceY);
+systems.sort(function(a,b){ return a.distance-b.distance})
 //drawSystems(newSystems, systemRadius);
 createSystemList(systems);
 var time2 = new Date().getTime();

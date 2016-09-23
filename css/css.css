@@ -19,4 +19,5 @@ svg {
 
 .planetList li, .starList li{
 	list-style: none;
+	margin-left: 2.5em;
 }
